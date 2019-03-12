@@ -1,0 +1,27 @@
+#.boto is required for this module
+# pip install --ignore-installed boto3
+# pip install boto
+# cat ~/.boto 
+#[Credentials]
+#aws_access_key_id = xxx
+#aws_secret_access_key = xxx
+
+# slave
+- shell:  cat ../jenkins-slave-packer/packer-manifest.json | jq '.builds[].artifact_id' | sed -e 's/.*://' -e 's/"//'
+  register: image_id_slave
+
+- debug: var=image_id_slave 
+- ec2_ami_copy:
+    source_region: ap-southeast-1
+    region: "{{ dest_region }}"
+    source_image_id: "{{ image_id_slave.stdout }}"
+    name: jenkins-slave
+  
+# master
+- shell:  cat ../jenkins-master-packer/packer-manifest.json | jq '.builds[].artifact_id' | sed -e 's/.*://' -e 's/"//'
+  register: image_id_master
+- ec2_ami_copy:
+    source_region: ap-southeast-1
+    region: "{{ dest_region }}"
+    source_image_id: "{{ image_id_master.stdout }}"
+    name: jenkins-master

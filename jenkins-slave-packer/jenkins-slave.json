@@ -1,0 +1,62 @@
+{
+    "variables": {
+      "name": "jenkins-slave-{{timestamp}}",
+      "source_ami": "ami-05868579",
+      "access_key":"",
+      "secret_key":"",
+      "region":"ap-southeast-1"
+    },
+    "builders": [{
+      "type": "amazon-ebs",
+      "spot_price": "auto",
+      "spot_price_auto_product": "Linux/UNIX",
+      "access_key": "{{user `access_key`}}",
+      "secret_key":"{{user `secret_key`}}",
+      "name": "{{user `name`}}",
+      "ami_name": "{{user `name`}}",
+      "region": "{{user `region`}}",
+      "source_ami": "{{user `source_ami`}}",
+      "instance_type": "t2.micro",
+      "communicator": "ssh",
+      "ssh_username": "ec2-user",
+      "run_tags": {"Name":"packer-image"}
+    }],
+    "provisioners": [
+        {
+            "type": "ansible",
+            "playbook_file": "ansible/setup-slave.yaml"
+        },
+        {
+          "type": "shell",
+          "inline": ["sudo pip3 install boto3 jinja2 click==6.7 fabric requests"],
+          "inline_shebang": "/bin/bash -e"
+        },
+        {
+            "scripts": [
+              "jenkins-slave-packer/init.sh"
+            ],
+            "type": "shell",
+            "execute_command": "chmod +x {{ .Path }}; {{ .Vars }} sudo -E '{{ .Path }}'"
+        },
+        {
+          "type": "shell",
+          "inline": ["sudo reboot"],
+          "inline_shebang": "/bin/bash -e",
+          "expect_disconnect": true
+        },
+        {
+          "type": "shell",
+          "script": "jenkins-slave-packer/post-restart.sh",
+          "execute_command": "chmod +x {{ .Path }}; {{ .Vars }} sudo -E '{{ .Path }}'",
+          "pause_before": "30s"       
+        }
+      ],
+
+      "post-processors": [
+        {
+          "type": "manifest",
+          "output": "jenkins-slave-packer/packer-manifest.json",
+          "strip_path": true
+        }
+      ]
+}

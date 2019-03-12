@@ -1,0 +1,30 @@
+.idea
+### Terraform template
+# Compiled files
+*.tfstate
+*.tfstate.backup
+terraform.tfvars
+
+# Module directory
+.terraform/
+
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+
+# packer manifest file
+*/packer-manifest.json
+
+#ansible retry files
+*.retry
+
+# test hosts file
+hosts
+
+# keys
+*.pem
+
+# bk files
+*.bk

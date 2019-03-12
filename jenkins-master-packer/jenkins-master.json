@@ -1,0 +1,43 @@
+{
+    "variables": {
+      "name": "jenkins-master-{{timestamp}}",
+      "source_ami": "ami-05868579",
+      "access_key":"",
+      "secret_key":"",
+      "region":"ap-southeast-1",
+      "dds_name": "jenkins.abc.com"
+    },
+    "builders": [{
+      "type": "amazon-ebs",
+      "spot_price": "auto",
+      "spot_price_auto_product": "Linux/UNIX",
+      "access_key": "{{user `access_key`}}",
+      "secret_key":"{{user `secret_key`}}",
+      "name": "{{user `name`}}",
+      "ami_name": "{{user `name`}}",
+      "region": "{{user `region`}}",
+      "source_ami": "{{user `source_ami`}}",
+      "instance_type": "t2.micro",
+      "communicator": "ssh",
+      "ssh_username": "ec2-user",
+      "run_tags": {"Name":"packer-image"}
+    }],
+    "provisioners": [
+        {
+            "type": "ansible",
+            "playbook_file": "ansible/setup-master.yaml",
+            "extra_arguments": [
+              "--extra-vars",
+              "{\"dds_name\": \"{{user `dds_name`}}\"}"
+            ]
+        }
+      ],
+
+      "post-processors": [
+        {
+          "type": "manifest",
+          "output": "jenkins-master-packer/packer-manifest.json",
+          "strip_path": true
+        }
+      ]
+}

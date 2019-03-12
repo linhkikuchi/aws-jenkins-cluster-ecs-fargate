@@ -1,0 +1,50 @@
+---
+- name: install docker
+  yum: name=docker state=present
+
+- name: add ec2-user to docker group
+  user: name=ec2-user groups=docker append=yes
+
+- name: start docker service
+  service:
+    name: docker
+    enabled: yes
+    state: started
+
+- name: install docker-py
+  pip:
+    name: docker-py
+    state: present
+
+# Run this one for https jenkins
+# gen keys in ~/.ssh/id_rsa, if file already exists, ignore the eror
+# If not, gen a new key
+- name: Generate rsa keys on host
+  command: ssh-keygen -f ~/.ssh/id_rsa -t rsa -N ''
+  ignore_errors: yes
+
+- name: set up jenkins-home and docker dir to make volume for docker container
+  file: path=/{{item.path}} state=directory mode={{item.mode}} group={{ user }} owner={{ user}}
+  with_items:
+    - { path: "{{ user_home }}/jenkins-home", mode: '0700' }
+    - { path: "{{ user_home }}/war",          mode: '0700' }
+    - { path: "{{ dds_cert_path }}",          mode: '0700' }
+
+- name: copy all config files for docker to remote build folder
+  synchronize:
+    src: "{{ role_path }}/files/"
+    dest: "{{ user_home }}/jenkins-master-docker"
+    perms: yes
+
+- name: Build jenkins master 
+  docker_image:
+    path: "{{ user_home }}/jenkins-master-docker"
+    name: "jenkins-master"
+    tag: latest
+
+- name: get latest jenkins-war file
+  get_url:
+    url: https://updates.jenkins-ci.org/latest/jenkins.war
+    dest: "{{ user_home }}/war"
+    owner: "{{ user }}"
+

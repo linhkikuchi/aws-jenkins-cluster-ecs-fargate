@@ -1,0 +1,17 @@
+---
+dds_country: 
+dds_state: 
+dds_locality: 
+dds_organization: 
+dds_common_name: "jenkins.abc.com"
+
+docker_daemon_config: /usr/lib/systemd/system/docker.service
+dds_cert_path: /etc/pki/tls
+terraform_version: 0.11.10
+packer_version: 1.2.5
+cli53_version: 0.8.12
+user_home: /home/ec2-user
+user: ec2-user
+bucket_name: 
+jenkins_backup_file: 
+dest_region: eu-west-1

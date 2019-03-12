@@ -1,0 +1,41 @@
+# generate_client_certs.yml
+
+- name: Create client key
+  command: openssl genrsa -out key.pem 4096
+  args:
+    chdir: "{{ dds_cert_path }}/"
+    creates: key.pem
+
+- name: Create client CSR 
+  command: openssl req -subj '/CN=client' -new -key key.pem -out client.csr
+  args:
+    chdir: "{{ dds_cert_path }}/"
+    creates: client.csr
+
+- name: Remove extfile
+  file:
+    state: absent
+    path: "{{ dds_cert_path }}/extfile.cnf"
+
+- name: Create extfile
+  file:
+    state: touch
+    path: "{{ dds_cert_path }}/extfile.cnf"
+
+- name: Add extendedKeyUsage to extfile
+  lineinfile:
+    dest: "{{ dds_cert_path }}/extfile.cnf"
+    line: "extendedKeyUsage = clientAuth"
+
+- name: Create the client certificate 
+  command: openssl x509 -req -days 9999 -sha256 -in client.csr -CA ca.pem -CAkey ca-key.pem -CAcreateserial -out cert.pem -extfile extfile.cnf
+  args:
+    chdir: "{{ dds_cert_path }}/"
+    creates: cert.pem
+
+- name: Set file permissions 
+  file:
+    dest: "{{ dds_cert_path }}/"
+    mode: 0444
+    owner: root
+    group: root

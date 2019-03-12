@@ -1,0 +1,7 @@
+---
+- hosts: all
+  become: true #for compatibility with packer
+  gather_facts: no
+  roles:
+    - common
+    - ssl-certs

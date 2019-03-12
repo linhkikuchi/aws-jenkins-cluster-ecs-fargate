@@ -1,0 +1,8 @@
+[
+  {
+    "name": "jenkins-slave",
+    "image": "xxx.dkr.ecr.ap-southeast-1.amazonaws.com/jenkins-slaves:latest",
+    "memoryReservation": 512,
+    "workingDirectory": "/var/jenkins"
+  }
+]

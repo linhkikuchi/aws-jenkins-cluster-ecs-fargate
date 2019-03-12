@@ -1,0 +1,43 @@
+---
+- name: upgrade all packages
+  yum: name=* state=latest
+
+- name: install basic packages
+  yum: name="{{ item }}" state=latest
+  with_items:
+    - openssl-devel
+    - python-pip
+    - jq
+  tags:
+    - yum packages
+
+- name: Create cert dir
+  file:
+    path: "{{ dds_cert_path }}"
+    state: directory
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Create cert dir
+  file:
+    path: "{{ dds_cert_path }}"
+    state: directory
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Generate ca-key.pem
+  command: openssl genrsa -out ca-key.pem 4096
+  args:
+    chdir: "{{ dds_cert_path }}/"
+    creates: ca-key.pem
+
+- name: Generate ca certificate
+  command: openssl req -new -nodes -x509 -days 9999 -key ca-key.pem -sha256 -out ca.pem  -subj '/C={{ dds_country }}/ST={{dds_state }}>/L={{ dds_locality }}/O={{ dds_organization }}/CN={{ dds_common_name }}'
+  args:
+    chdir: "{{ dds_cert_path }}/"
+    creates: ca.pem
+
+- import_tasks: generate_server_certs.yaml
+- import_tasks: generate_client_certs.yaml

@@ -1,0 +1,30 @@
+- name: get latest jenkins-backup from s3
+  aws_s3:
+    bucket: "{{ bucket_name }}"
+    object: "{{ jenkins_backup_file }}"
+    dest: "{{ user_home }}/jenkins-home"
+    mode: get
+  ignore_errors: yes
+
+- name: untar jenkins-backup
+  unarchive: 
+    src: "{{ user_home }}/jenkins-home/{{ jenkins_backup_file }}"
+    dest: "{{ user_home }}/jenkins-home"
+    remote_src: yes
+  ignore_errors: yes
+
+- name: remove tar file after untar
+  file: 
+    path: "{{ user_home }}/jenkins-home/{{ jenkins_backup_file }}"
+    state: absent
+  
+- name: Start jenkins master container
+  docker_container:
+    name: "jenkins-master"
+    image: "jenkins-master"
+    restart_policy: always
+    network_mode: host
+    volumes: 
+      - "{{ user_home }}/jenkins-home:/var/jenkins_home"
+      - "{{ user_home }}/war/jenkins.war:/usr/share/jenkins/jenkins.war"
+      - /etc/pki/tls:/etc/pki/tls

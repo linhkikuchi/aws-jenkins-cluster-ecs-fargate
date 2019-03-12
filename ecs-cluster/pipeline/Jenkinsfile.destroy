@@ -1,0 +1,61 @@
+pipeline {
+    agent {
+        label "${JOB_LOCATION}"
+    }
+
+    // Add timestamps to the console log
+    options {
+        timestamps()
+    }
+
+    stages {
+        stage('Pre-Cleanup') {
+            steps {
+                sh 'rm -rf ecs-cluster/terraform/.terraform'
+                sh 'rm -rf ~/.aws/credentials'
+            }
+        }
+
+        stage('Preparation') {
+            steps {
+                wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
+                    sh './ecs-cluster/pipeline/awscli-config.sh'
+                }
+            }
+        }
+
+        stage('Plan') {
+            steps {
+                wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
+                    sh './ecs-cluster/pipeline/create_ecs_cluster.sh destroy'
+                }
+            }
+        }
+
+        stage('Manual Confirmation') {
+            when {
+                environment name: 'BATCH_RUN', value: ''
+            }
+            steps {
+                /* Wait 1 minutes to the user input, after this the pipeline will be aborted */
+                timeout(time:1, unit:'MINUTES') {
+                    input message: "Proceed to destroy ECS cluster?", id: "apply"
+                }
+            }
+        }
+
+        stage('Destroy ECS cluster') {
+            steps {
+                wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
+                    sh 'cd ecs-cluster/terraform && terraform apply tfplan'
+                }
+            }
+            post {
+                always {
+                    echo "Cleaning up..."
+                    sh 'rm -rf ~/.aws/credentials'
+                }
+            }
+        }
+    }
+}
